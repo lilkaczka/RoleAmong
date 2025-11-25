@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Among Us - Statystyki</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .autocomplete-wrapper {
+            position: relative;
+        }
+
+        .autocomplete-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .autocomplete-item {
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .autocomplete-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .games-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .game-item {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        .game-item:hover {
+            transform: translateX(5px);
+        }
+
+        .game-item.impostor {
+            border-left-color: #e74c3c;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .game-role {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .game-item.impostor .game-role {
+            color: #e74c3c;
+        }
+
+        .game-badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+
+        .game-item.impostor .game-badge {
+            background: #e74c3c;
+        }
+
+        .game-details {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .game-note {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #e0e0e0;
+            color: #555;
+            font-style: italic;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .pass-counter {
+            background: #28a745;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .pass-value {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .delete-btn {
+            background: #e74c3c;
+            padding: 5px 10px;
+            font-size: 0.85em;
+            width: auto;
+            margin-top: 10px;
+        }
+
+        .delete-btn:hover {
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-style: italic;
+        }
+
+        .add-role-btn {
+            background: #17a2b8;
+            padding: 8px 15px;
+            font-size: 0.9em;
+            width: auto;
+            margin-top: 5px;
+        }
+
+        .add-role-btn:hover {
+            box-shadow: 0 5px 15px rgba(23, 162, 184, 0.4);
+        }
+
+        .additional-roles {
+            margin-top: 10px;
+        }
+
+        .role-tag {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin: 5px 5px 5px 0;
+            font-size: 0.85em;
+            position: relative;
+        }
+
+        .role-tag .remove-role {
+            margin-left: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .role-tag .remove-role:hover {
+            opacity: 0.7;
+        }
+
+        .pie-chart-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            min-height: 250px;
+        }
+
+        .pie-chart {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+
+        .pie-chart svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .pie-segment {
+            transition: opacity 0.3s;
+        }
+
+        .pie-segment:hover {
+            opacity: 0.8;
+        }
+
+        .pie-legend {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .highest-pass {
+            background: #ffc107;
+            color: #333;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+
+        .highest-pass-value {
+            font-size: 1.5em;
+            color: #764ba2;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Among Us - Statystyki</h1>
+        
+        <div class="main-content">
+            <!-- Formularz dodawania gry -->
+            <div class="card">
+                <h2>Dodaj grę</h2>
+                <form id="gameForm">
+                    <div class="form-group">
+                        <label for="role">Rola:</label>
+                        <div class="autocomplete-wrapper">
+                            <input type="text" id="role" placeholder="Wpisz rolę..." autocomplete="off">
+                            <div class="autocomplete-list" id="autocompleteList"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="button" class="add-role-btn" id="addRoleBtn">+ Dodaj dodatkową rolę</button>
+                        <div class="additional-roles" id="additionalRoles"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="players">Ilość ludzi:</label>
+                        <input type="number" id="players" min="1" max="15" placeholder="np. 10">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="note">Notatka:</label>
+                        <textarea id="note" rows="3" placeholder="Opcjonalna notatka..."></textarea>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="impostor">
+                        <label for="impostor" style="margin: 0; cursor: pointer;">Byłem impostorem</label>
+                    </div>
+                    
+                    <button type="submit">Dodaj grę</button>
+                </form>
+            </div>
+
+            <!-- Statystyki -->
+            <div class="card">
+                <h2>Statystyki</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalGames">0</div>
+                        <div class="stat-label">Wszystkie gry</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="impostorGames">0</div>
+                        <div class="stat-label">Jako impostor</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="crewGames">0</div>
+                        <div class="stat-label">Jako załoga</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="impostorPercent">0%</div>
+                        <div class="stat-label">% impostor</div>
+                    </div>
+                </div>
+                
+                <div class="pass-counter">
+                    <div class="stat-label">Aktualny pass</div>
+                    <div class="pass-value" id="currentPass">0</div>
+                </div>
+                
+                <div class="highest-pass">
+                    <div>Najwyższa passa</div>
+                    <div class="highest-pass-value" id="highestPass">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wykres kołowy ról -->
+        <div class="card">
+            <h2>Najczęstsze role</h2>
+            <div class="pie-chart-container">
+                <div class="pie-chart" id="pieChart"></div>
+            </div>
+            <div class="pie-legend" id="pieLegend"></div>
+        </div>
+
+        <!-- Lista gier -->
+        <div class="card">
+            <h2>Lista gier</h2>
+            <div class="games-list" id="gamesList">
+                <div class="empty-state">Brak gier. Dodaj pierwszą grę!</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dane aplikacji
+        let games = JSON.parse(localStorage.getItem('amongUsGames')) || [];
+        let roles = JSON.parse(localStorage.getItem('amongUsRoles')) || [];
+        let currentPass = parseInt(localStorage.getItem('amongUsCurrentPass')) || 0;
+        let highestPass = parseInt(localStorage.getItem('amongUsHighestPass')) || 0;
+        let additionalRoles = [];
+
+        // Elementy DOM
+        const gameForm = document.getElementById('gameForm');
+        const roleInput = document.getElementById('role');
+        const playersInput = document.getElementById('players');
+        const noteInput = document.getElementById('note');
+        const impostorCheckbox = document.getElementById('impostor');
+        const autocompleteList = document.getElementById('autocompleteList');
+        const gamesList = document.getElementById('gamesList');
+        const addRoleBtn = document.getElementById('addRoleBtn');
+        const additionalRolesContainer = document.getElementById('additionalRoles');
+
+        // Inicjalizacja - przelicz najwyższą passę z historii
+        function initializeHighestPass() {
+            let maxPass = 0;
+            let tempPass = 0;
+            
+            for (let i = 0; i < games.length; i++) {
+                if (games[i].isImpostor) {
+                    if (tempPass > maxPass) {
+                        maxPass = tempPass;
+                    }
+                    tempPass = 0;
+                } else {
+                    tempPass++;
+                }
+            }
+            
+            if (tempPass > maxPass) {
+                maxPass = tempPass;
+            }
+            
+            if (maxPass > highestPass) {
+                highestPass = maxPass;
+                localStorage.setItem('amongUsHighestPass', highestPass.toString());
+            }
+        }
+
+        initializeHighestPass();
+        updateStats();
+        renderGames();
+        updatePassCounter();
+        updateHighestPass();
+        renderPieChart();
+
+        // Obsługa autocomplete dla ról
+        roleInput.addEventListener('input', function() {
+            const value = this.value.toLowerCase().trim();
+            
+            if (value === '') {
+                autocompleteList.style.display = 'none';
+                return;
+            }
+
+            const filtered = roles.filter(role => 
+                role.toLowerCase().startsWith(value) && role.toLowerCase() !== value
+            );
+
+            if (filtered.length > 0) {
+                autocompleteList.innerHTML = filtered
+                    .map(role => `<div class="autocomplete-item">${role}</div>`)
+                    .join('');
+                autocompleteList.style.display = 'block';
+            } else {
+                autocompleteList.style.display = 'none';
+            }
+        });
+
+        // Kliknięcie w sugestię autocomplete
+        autocompleteList.addEventListener('click', function(e) {
+            if (e.target.classList.contains('autocomplete-item')) {
+                roleInput.value = e.target.textContent;
+                autocompleteList.style.display = 'none';
+                roleInput.focus();
+            }
+        });
+
+        // Ukryj autocomplete przy kliknięciu poza
+        document.addEventListener('click', function(e) {
+            if (!roleInput.contains(e.target) && !autocompleteList.contains(e.target)) {
+                autocompleteList.style.display = 'none';
+            }
+        });
+
+        // Obsługa dodawania dodatkowej roli
+        addRoleBtn.addEventListener('click', function() {
+            const roleInputClone = document.createElement('div');
+            roleInputClone.className = 'form-group';
+            roleInputClone.innerHTML = `
+                <div class="autocomplete-wrapper">
+                    <input type="text" class="additional-role-input" placeholder="Wpisz dodatkową rolę..." autocomplete="off">
+                    <div class="autocomplete-list additional-autocomplete"></div>
+                </div>
+            `;
+            additionalRolesContainer.appendChild(roleInputClone);
+            
+            const newInput = roleInputClone.querySelector('.additional-role-input');
+            const newAutocomplete = roleInputClone.querySelector('.additional-autocomplete');
+            
+            // Autocomplete dla dodatkowej roli
+            newInput.addEventListener('input', function() {
+                const value = this.value.toLowerCase().trim();
+                
+                if (value === '') {
+                    newAutocomplete.style.display = 'none';
+                    return;
+                }
+
+                const filtered = roles.filter(role => 
+                    role.toLowerCase().startsWith(value) && role.toLowerCase() !== value
+                );
+
+                if (filtered.length > 0) {
+                    newAutocomplete.innerHTML = filtered
+                        .map(role => `<div class="autocomplete-item">${role}</div>`)
+                        .join('');
+                    newAutocomplete.style.display = 'block';
+                } else {
+                    newAutocomplete.style.display = 'none';
+                }
+            });
+
+            newAutocomplete.addEventListener('click', function(e) {
+                if (e.target.classList.contains('autocomplete-item')) {
+                    newInput.value = e.target.textContent;
+                    newAutocomplete.style.display = 'none';
+                }
+            });
+
+            // Przycisk usuwania
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'delete-btn';
+            removeBtn.textContent = 'Usuń';
+            removeBtn.style.width = 'auto';
+            removeBtn.style.marginTop = '5px';
+            removeBtn.onclick = function() {
+                roleInputClone.remove();
+            };
+            roleInputClone.appendChild(removeBtn);
+        });
+
+        // Obsługa formularza
+        gameForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const role = roleInput.value.trim();
+            const players = parseInt(playersInput.value);
+            const note = noteInput.value.trim();
+            const isImpostor = impostorCheckbox.checked;
+
+            if (!role) {
+                alert('Proszę wpisać rolę!');
+                return;
+            }
+
+            if (!players || players < 1) {
+                alert('Proszę wpisać poprawną ilość ludzi!');
+                return;
+            }
+
+            // Zbierz wszystkie role (główna + dodatkowe)
+            const allRoles = [role];
+            const additionalInputs = document.querySelectorAll('.additional-role-input');
+            additionalInputs.forEach(input => {
+                const additionalRole = input.value.trim();
+                if (additionalRole) {
+                    allRoles.push(additionalRole);
+                }
+            });
+
+            // Dodaj role do listy jeśli nie istnieją
+            allRoles.forEach(r => {
+                if (!roles.includes(r)) {
+                    roles.push(r);
+                }
+            });
+            roles.sort();
+            localStorage.setItem('amongUsRoles', JSON.stringify(roles));
+
+            // Utwórz obiekt gry
+            const game = {
+                id: Date.now(),
+                role: role,
+                additionalRoles: allRoles.slice(1), // Wszystkie oprócz głównej
+                allRoles: allRoles, // Wszystkie role razem
+                players: players,
+                note: note,
+                isImpostor: isImpostor,
+                date: new Date().toLocaleString('pl-PL')
+            };
+
+            // Dodaj grę
+            games.unshift(game);
+            saveGames();
+
+            // Aktualizuj pass
+            if (isImpostor) {
+                currentPass = 0;
+            } else {
+                currentPass++;
+                if (currentPass > highestPass) {
+                    highestPass = currentPass;
+                    localStorage.setItem('amongUsHighestPass', highestPass.toString());
+                }
+            }
+            localStorage.setItem('amongUsCurrentPass', currentPass.toString());
+
+            // Wyczyść formularz
+            gameForm.reset();
+            additionalRolesContainer.innerHTML = '';
+            autocompleteList.style.display = 'none';
+
+            // Aktualizuj widok
+            updateStats();
+            renderGames();
+            updatePassCounter();
+            updateHighestPass();
+            renderPieChart();
+        });
+
+        // Renderowanie listy gier
+        function renderGames() {
+            if (games.length === 0) {
+                gamesList.innerHTML = '<div class="empty-state">Brak gier. Dodaj pierwszą grę!</div>';
+                return;
+            }
+
+            gamesList.innerHTML = games.map(game => {
+                const allRoles = game.allRoles || [game.role];
+                const additionalRolesHtml = allRoles.length > 1 
+                    ? `<div style="margin-top: 8px;"><strong>Dodatkowe role:</strong> ${allRoles.slice(1).map(r => `<span class="role-tag">${r}</span>`).join('')}</div>`
+                    : '';
+                
+                return `
+                    <div class="game-item ${game.isImpostor ? 'impostor' : ''}">
+                        <div class="game-header">
+                            <span class="game-role">${game.role}</span>
+                            <span class="game-badge">${game.isImpostor ? 'IMPOSTOR' : 'ZAŁOGA'}</span>
+                        </div>
+                        <div class="game-details">
+                            <strong>Ludzi:</strong> ${game.players} | 
+                            <strong>Data:</strong> ${game.date}
+                        </div>
+                        ${additionalRolesHtml}
+                        ${game.note ? `<div class="game-note">${game.note}</div>` : ''}
+                        <button class="delete-btn" onclick="deleteGame(${game.id})">Usuń</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Usuwanie gry
+        function deleteGame(id) {
+            if (confirm('Czy na pewno chcesz usunąć tę grę?')) {
+                const gameIndex = games.findIndex(g => g.id === id);
+                if (gameIndex !== -1) {
+                    const game = games[gameIndex];
+                    games.splice(gameIndex, 1);
+                    saveGames();
+                    
+                    // Przelicz pass
+                    recalculatePass();
+                    
+                    updateStats();
+                    renderGames();
+                    updatePassCounter();
+                    updateHighestPass();
+                    renderPieChart();
+                }
+            }
+        }
+
+        // Przeliczanie pass po usunięciu gry
+        function recalculatePass() {
+            currentPass = 0;
+            let maxPass = 0;
+            let tempPass = 0;
+            
+            // Przelicz od najnowszej do najstarszej
+            for (let i = 0; i < games.length; i++) {
+                if (games[i].isImpostor) {
+                    if (tempPass > maxPass) {
+                        maxPass = tempPass;
+                    }
+                    tempPass = 0;
+                } else {
+                    tempPass++;
+                }
+            }
+            
+            // Sprawdź ostatnią serię
+            if (tempPass > maxPass) {
+                maxPass = tempPass;
+            }
+            
+            // Aktualna passa to ostatnia seria
+            currentPass = tempPass;
+            
+            // Zaktualizuj najwyższą passę jeśli potrzeba
+            if (maxPass > highestPass) {
+                highestPass = maxPass;
+                localStorage.setItem('amongUsHighestPass', highestPass.toString());
+            }
+            
+            localStorage.setItem('amongUsCurrentPass', currentPass.toString());
+        }
+
+        // Aktualizacja statystyk
+        function updateStats() {
+            const total = games.length;
+            const impostor = games.filter(g => g.isImpostor).length;
+            const crew = total - impostor;
+            const impostorPercent = total > 0 ? Math.round((impostor / total) * 100) : 0;
+
+            document.getElementById('totalGames').textContent = total;
+            document.getElementById('impostorGames').textContent = impostor;
+            document.getElementById('crewGames').textContent = crew;
+            document.getElementById('impostorPercent').textContent = impostorPercent + '%';
+        }
+
+        // Aktualizacja licznika pass
+        function updatePassCounter() {
+            document.getElementById('currentPass').textContent = currentPass;
+        }
+
+        // Aktualizacja najwyższej passy
+        function updateHighestPass() {
+            document.getElementById('highestPass').textContent = highestPass;
+        }
+
+        // Rysowanie wykresu kołowego
+        function renderPieChart() {
+            const pieChart = document.getElementById('pieChart');
+            const pieLegend = document.getElementById('pieLegend');
+            
+            // Zlicz role
+            const roleCounts = {};
+            games.forEach(game => {
+                const allRoles = game.allRoles || [game.role];
+                allRoles.forEach(role => {
+                    roleCounts[role] = (roleCounts[role] || 0) + 1;
+                });
+            });
+
+            const roleEntries = Object.entries(roleCounts).sort((a, b) => b[1] - a[1]);
+            
+            if (roleEntries.length === 0) {
+                pieChart.innerHTML = '<div class="empty-state">Brak danych</div>';
+                pieLegend.innerHTML = '';
+                return;
+            }
+
+            const total = roleEntries.reduce((sum, [, count]) => sum + count, 0);
+            
+            // Kolory dla wykresu
+            const colors = [
+                '#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b',
+                '#fa709a', '#fee140', '#30cfd0', '#330867', '#ff6a88',
+                '#ffecd2', '#fcb69f', '#a8edea', '#fed6e3', '#ff9a9e'
+            ];
+
+            // Rysuj wykres kołowy
+            let currentAngle = 0;
+            const radius = 80;
+            const centerX = 100;
+            const centerY = 100;
+            
+            let svgContent = `<svg viewBox="0 0 200 200">`;
+            
+            roleEntries.forEach(([role, count], index) => {
+                const percentage = count / total;
+                const angle = percentage * 360;
+                const largeArc = angle > 180 ? 1 : 0;
+                
+                const startAngle = currentAngle;
+                const endAngle = currentAngle + angle;
+                
+                const x1 = centerX + radius * Math.cos((startAngle - 90) * Math.PI / 180);
+                const y1 = centerY + radius * Math.sin((startAngle - 90) * Math.PI / 180);
+                const x2 = centerX + radius * Math.cos((endAngle - 90) * Math.PI / 180);
+                const y2 = centerY + radius * Math.sin((endAngle - 90) * Math.PI / 180);
+                
+                const color = colors[index % colors.length];
+                
+                svgContent += `
+                    <path class="pie-segment" d="M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z" 
+                          fill="${color}" 
+                          data-role="${role}" 
+                          data-count="${count}"
+                          title="${role}: ${count} (${Math.round(percentage * 100)}%)">
+                    </path>
+                `;
+                
+                currentAngle += angle;
+            });
+            
+            svgContent += `</svg>`;
+            pieChart.innerHTML = svgContent;
+
+            // Legenda
+            pieLegend.innerHTML = roleEntries.map(([role, count], index) => {
+                const percentage = Math.round((count / total) * 100);
+                const color = colors[index % colors.length];
+                return `
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: ${color};"></div>
+                        <span>${role}: ${count} (${percentage}%)</span>
+                    </div>
+                `;
+            }).join('');
+
+            // Tooltip na hover
+            pieChart.querySelectorAll('.pie-segment').forEach(segment => {
+                segment.addEventListener('mouseenter', function() {
+                    const role = this.getAttribute('data-role');
+                    const count = this.getAttribute('data-count');
+                    const percentage = Math.round((count / total) * 100);
+                    this.setAttribute('title', `${role}: ${count} (${percentage}%)`);
+                });
+            });
+        }
+
+        // Zapisywanie gier
+        function saveGames() {
+            localStorage.setItem('amongUsGames', JSON.stringify(games));
+        }
+
+        // Eksport funkcji do globalnego scope (dla onclick)
+        window.deleteGame = deleteGame;
+    </script>
+</body>
+</html>
