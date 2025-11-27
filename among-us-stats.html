@@ -317,6 +317,7 @@
             align-items: center;
             margin: 20px 0;
             min-height: 250px;
+            position: relative;
         }
 
         .pie-chart {
@@ -375,6 +376,72 @@
             color: #764ba2;
             margin-top: 5px;
         }
+
+        .pie-tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 10000;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            white-space: nowrap;
+        }
+
+        .pie-tooltip.show {
+            display: block;
+        }
+
+        .square-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-square {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-square:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-square-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-square-label {
+            font-size: 0.9em;
+            text-align: center;
+            opacity: 0.95;
+            line-height: 1.2;
+        }
+
+        .stat-square-percentage {
+            font-size: 0.75em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -401,7 +468,7 @@
                     
                     <div class="form-group">
                         <label for="players">Ilość ludzi:</label>
-                        <input type="number" id="players" min="1" max="15" placeholder="np. 10">
+                        <input type="number" id="players" min="1" max="30" placeholder="np. 10">
                     </div>
                     
                     <div class="form-group">
@@ -457,8 +524,10 @@
             <h2>Najczęstsze role</h2>
             <div class="pie-chart-container">
                 <div class="pie-chart" id="pieChart"></div>
+                <div class="pie-tooltip" id="pieTooltip"></div>
             </div>
             <div class="pie-legend" id="pieLegend"></div>
+            <div class="square-stats" id="squareStats"></div>
         </div>
 
         <!-- Lista gier -->
@@ -877,27 +946,78 @@
             svgContent += `</svg>`;
             pieChart.innerHTML = svgContent;
 
-            // Legenda
-            pieLegend.innerHTML = roleEntries.map(([role, count], index) => {
-                const percentage = Math.round((count / total) * 100);
-                const color = colors[index % colors.length];
-                return `
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: ${color};"></div>
-                        <span>${role}: ${count} (${percentage}%)</span>
-                    </div>
-                `;
-            }).join('');
+            // Legenda - ukryta, bo statystyki są w kwadratach
+            pieLegend.innerHTML = '';
 
             // Tooltip na hover
+            const tooltip = document.getElementById('pieTooltip');
+            
             pieChart.querySelectorAll('.pie-segment').forEach(segment => {
-                segment.addEventListener('mouseenter', function() {
+                segment.addEventListener('mouseenter', function(e) {
                     const role = this.getAttribute('data-role');
                     const count = this.getAttribute('data-count');
                     const percentage = Math.round((count / total) * 100);
-                    this.setAttribute('title', `${role}: ${count} (${percentage}%)`);
+                    
+                    tooltip.textContent = `${role}: ${count} (${percentage}%)`;
+                    tooltip.classList.add('show');
+                });
+                
+                segment.addEventListener('mousemove', function(e) {
+                    if (tooltip.classList.contains('show')) {
+                        tooltip.style.left = (e.clientX + 15) + 'px';
+                        tooltip.style.top = (e.clientY - 35) + 'px';
+                    }
+                });
+                
+                segment.addEventListener('mouseleave', function() {
+                    tooltip.classList.remove('show');
                 });
             });
+            
+            // Renderuj kwadratowe statystyki
+            renderSquareStats(roleEntries, total, colors);
+        }
+
+        // Renderowanie kwadratowych statystyk
+        function renderSquareStats(roleEntries, total, colors) {
+            const squareStats = document.getElementById('squareStats');
+            
+            if (roleEntries.length === 0) {
+                squareStats.innerHTML = '';
+                return;
+            }
+            
+            // Pary kolorów dla gradientów
+            const colorPairs = [
+                ['#667eea', '#764ba2'],
+                ['#f093fb', '#f5576c'],
+                ['#4facfe', '#00f2fe'],
+                ['#43e97b', '#38f9d7'],
+                ['#fa709a', '#fee140'],
+                ['#30cfd0', '#330867'],
+                ['#a8edea', '#fed6e3'],
+                ['#ff9a9e', '#fecfef'],
+                ['#ffecd2', '#fcb69f'],
+                ['#ff6a88', '#ee5a6f'],
+                ['#c471ed', '#f64f59'],
+                ['#12c2e9', '#c471ed'],
+                ['#f093fb', '#4facfe'],
+                ['#43e97b', '#38f9d7'],
+                ['#fa709a', '#fee140']
+            ];
+            
+            squareStats.innerHTML = roleEntries.map(([role, count], index) => {
+                const percentage = Math.round((count / total) * 100);
+                const colorPair = colorPairs[index % colorPairs.length];
+                
+                return `
+                    <div class="stat-square" style="background: linear-gradient(135deg, ${colorPair[0]} 0%, ${colorPair[1]} 100%);">
+                        <div class="stat-square-value">${count}</div>
+                        <div class="stat-square-label">${role}</div>
+                        <div class="stat-square-percentage">${percentage}%</div>
+                    </div>
+                `;
+            }).join('');
         }
 
         // Zapisywanie gier
